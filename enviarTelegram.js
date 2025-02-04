@@ -41,7 +41,7 @@ sendMessage(CHAT_ID, MESSAGE);
 /*
 const Telegraf = require('telegraf');
 
-const bot = new Telegraf('1203320499:AAFEhs6__ypKptwfTjfS88HaRTH0-lxmVOU')
+const bot = new Telegraf()
 
 bot.use((ctx, next) => {
   ctx.reply('usaste el bot');
