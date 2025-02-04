@@ -1,115 +1,34 @@
-// sendMessage.js
-const fetch = require('node-fetch');
+const TelegramBot = require('node-telegram-bot-api');
+const cheerio = require('cheerio');
+const axios = require('axios');
 
-// Obtener el token del bot y el ID del chat desde los argumentos del terminal
-const BOT_TOKEN = 'TU_BOT_TOKEN_AQUI';
-const CHAT_ID = 'TU_CHAT_ID_AQUI';
-const MESSAGE = process.argv[2]; // El mensaje se recibe como argumento
+// Reemplaza con tu token real
+const token = '7983099528:AAF8s_17PD9Fnc0D3pbzlzAt5FrJiH5Baqo';
 
-if (!MESSAGE) {
-    console.error('Por favor, proporciona un mensaje como argumento.');
-    process.exit(1);
-}
+const bot = new TelegramBot(token, { polling: true });
 
-// Función para enviar el mensaje
-const sendMessage = async (chatId, message) => {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-        }),
-    });
+  if (text === '/start') {
+    await bot.sendMessage(chatId, '¡Hola! 👋 ¿Te gustaría ver algunos proyectos de Freelancer.es?');
+  } else if (text.toLowerCase() === 'sí') {
+    try {
+      const response = await axios.get('https://www.freelancer.es/jobs?languages=es');
+      const $ = cheerio.load(response.data);
+      const projects = $('.ProjectSearch-content');
 
-    const data = await response.json();
+      let projectList = '';
+      projects.each((index, element) => {
+        projectList += `\n**Proyecto ${index + 1}:**\n`;
+        projectList += $(element).text().trim();
+      });
 
-    if (data.ok) {
-        console.log(`Mensaje enviado: ${data.result.text}`);
-    } else {
-        console.error(`Error al enviar mensaje: ${data.description}`);
+      await bot.sendMessage(chatId, projectList);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      await bot.sendMessage(chatId, 'Ups! Algo salió mal. Intenta de nuevo más tarde.');
     }
-};
-
-// Llamar a la función para enviar el mensaje
-sendMessage(CHAT_ID, MESSAGE);
-
-/*
-const Telegraf = require('telegraf');
-
-const bot = new Telegraf()
-
-bot.use((ctx, next) => {
-  ctx.reply('usaste el bot');
-  // next();
-  ctx.state.users = 75;
-  next(ctx); //next is passed because we can modify data
-})
-
-bot.start((ctx) => {
-  // ctx.reply('Welcome');
-  // console.log(ctx)
-  // console.log(ctx.from)
-  // console.log(ctx.chat)
-  // console.log(ctx.message)
-  // console.log(ctx.updateSubTypes)
-  console.log(ctx.updateSubTypes[0])
-
-  // ctx.reply(`Welcome ${ctx.from.first_name} ${ctx.from.last_name}`)
-  // ctx.reply(`Total Users: ${ctx.state.users}`) // shurtcuts does not require id
-
-  // shortcuts avoid to write the following
-  // bot.telegram.sendMessage(ctx.chat.id, 'hello world', [extra]);
-  bot.telegram.sendMessage(ctx.chat.id, 'hello world');
-  // bot.telegram.sendMessage(ctx.chat.id, '**hello world**', {
-  //   parse_mode: 'Markdown',
-  //   disable_notification: true
-  // });
-})
-
-bot.help(ctx => ctx.reply('help command'))
-
-bot.settings(ctx => ctx.reply('settings command'))
-
-// Custom Command
-// to avoid case sensitive commando you can put in an array some variations
-bot.command(['mytest', 'Mytest', 'test'], (ctx) => {
-  ctx.reply('my custom command');
-})
-
-// hears
-// This wont work on groups, so you will have to turn off 'privacy group'
-bot.hears('computer', ctx => {
-  ctx.reply('Hey I am selling a computer!!!');
-})
-
-// bot.on('text', ctx => {
-//   ctx.reply('text message');
-// });
-
-// bot.on('sticker', ctx => {
-//   ctx.reply('oh! you like stickers')
-// })
-
-
-// this methods can be recognized inside a long text
-bot.mention('BotFather', (ctx) => {
-  ctx.reply('you mentioned someone')
-})
-
-bot.phone('+1 730 263-4233', (ctx) => {
-  ctx.reply('this is a phone')
+  }
 });
-
-bot.hashtag('coding', (ctx) => {
-  ctx.reply('hashtag!')
-})
-
-
-
-bot.launch()
-*/
